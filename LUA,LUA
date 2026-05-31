@@ -1,0 +1,297 @@
+# Sacred soru  
+  
+repeat wait() until game:IsLoaded()  
+  
+local Players = game:GetService("Players")  
+local RunService = game:GetService("RunService")  
+local UIS = game:GetService("UserInputService")  
+local VIM = game:GetService("VirtualInputManager")  
+local lp = Players.LocalPlayer  
+local RS = game:GetService("ReplicatedStorage")  
+  
+-- ConfiguraciÃ³n  
+local COOLDOWN = 1.0  
+local OFFSET = CFrame.new(0, 0, 3)  -- detrÃ¡s del enemigo  
+  
+-- Remote correcto (CommF_)  
+local remote = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("CommF_")  
+if not remote then  
+    print("Remote no encontrado")  
+    return  
+end  
+  
+-- Equipar fruta Portal (por si acaso)  
+local function equipFruit()  
+    pcall(function() remote:InvokeServer("EquipFruit", "Portal") end)  
+end  
+  
+-- Obtener jugador mÃ¡s cercano  
+local function getNearest()  
+    local nearest, minDist = nil, math.huge  
+    local myChar = lp.Character  
+    if not myChar then return nil end  
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")  
+    if not myRoot then return nil end  
+    for _, plr in pairs(Players:GetPlayers()) do  
+        if plr ~= lp and plr.Character then  
+            local targetRoot = plr.Character:FindFirstChild("HumanoidRootPart")  
+            if targetRoot then  
+                local dist = (targetRoot.Position - myRoot.Position).Magnitude  
+                if dist < minDist then  
+                    minDist = dist  
+                    nearest = plr  
+                end  
+            end  
+        end  
+    end  
+    return nearest  
+end  
+  
+-- AcciÃ³n principal: TP + X  
+local selectedTarget = nil  
+local lastAttack = -999  
+local listOpen = false  
+  
+local function doAttack()  
+    if tick() - lastAttack < COOLDOWN then return end  
+    local target = selectedTarget or getNearest()  
+    if not target then return end  
+    local targetChar = target.Character  
+    if not targetChar then return end  
+    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")  
+    if not targetRoot then return end  
+    local myChar = lp.Character  
+    if not myChar then return end  
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")  
+    if not myRoot then return end  
+  
+    -- Teletransporte  
+    myRoot.CFrame = targetRoot.CFrame * OFFSET  
+    lastAttack = tick()  
+    wait(0.05)  
+  
+    -- Asegurar fruta Portal y lanzar X  
+    equipFruit()  
+    wait(0.02)  
+    VIM:SendKeyEvent(true, Enum.KeyCode.X, false, game)  
+    wait(0.02)  
+    VIM:SendKeyEvent(false, Enum.KeyCode.X, false, game)  
+    wait(0.02)  
+    VIM:SendKeyEvent(true, Enum.KeyCode.X, false, game)  
+    wait(0.02)  
+    VIM:SendKeyEvent(false, Enum.KeyCode.X, false, game)  
+end  
+  
+-- ==================== INTERFAZ ====================  
+local gui = Instance.new("ScreenGui")  
+gui.Name = "SacredSoru"  
+gui.ResetOnSpawn = false  
+gui.Parent = lp:WaitForChild("PlayerGui")  
+  
+local mainBtn = Instance.new("TextButton")  
+mainBtn.Size = UDim2.new(0, 70, 0, 70)  
+mainBtn.Position = UDim2.new(0.85, -35, 0.8, -35)  
+mainBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)  
+mainBtn.BackgroundTransparency = 0.2  
+mainBtn.Text = "SACRED\nSORU"  
+mainBtn.TextColor3 = Color3.new(1,1,1)  
+mainBtn.TextSize = 14  
+mainBtn.Font = Enum.Font.GothamBold  
+mainBtn.Parent = gui  
+local corner = Instance.new("UICorner", mainBtn)  
+corner.CornerRadius = UDim.new(1,0)  
+local stroke = Instance.new("UIStroke", mainBtn)  
+stroke.Color = Color3.new(1,1,1)  
+stroke.Thickness = 1.5  
+stroke.Transparency = 0.3  
+  
+local targetLabel = Instance.new("TextLabel")  
+targetLabel.Size = UDim2.new(0, 140, 0, 20)  
+targetLabel.Position = UDim2.new(0.5, -70, 1.2, 0)  
+targetLabel.BackgroundColor3 = Color3.fromRGB(0,0,0)  
+targetLabel.BackgroundTransparency = 0.5  
+targetLabel.Text = "Auto"  
+targetLabel.TextColor3 = Color3.new(1,1,1)  
+targetLabel.TextSize = 11  
+targetLabel.Font = Enum.Font.Gotham  
+targetLabel.Parent = mainBtn  
+Instance.new("UICorner", targetLabel).CornerRadius = UDim.new(0,4)  
+  
+local listBtn = Instance.new("TextButton")  
+listBtn.Size = UDim2.new(0, 25, 0, 25)  
+listBtn.Position = UDim2.new(1.1, 0, 0.65, 0)  
+listBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)  
+listBtn.Text = "â‰¡"  
+listBtn.TextColor3 = Color3.new(1,1,1)  
+listBtn.TextSize = 16  
+listBtn.Font = Enum.Font.GothamBold  
+listBtn.Parent = mainBtn  
+local listCorner = Instance.new("UICorner", listBtn)  
+listCorner.CornerRadius = UDim.new(1,0)  
+local listStroke = Instance.new("UIStroke", listBtn)  
+listStroke.Color = Color3.new(1,1,1)  
+listStroke.Thickness = 1  
+  
+local listFrame = Instance.new("Frame")  
+listFrame.Size = UDim2.new(0, 200, 0, 250)  
+listFrame.Position = UDim2.new(0.5, -100, 0.5, -125)  
+listFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)  
+listFrame.BorderSizePixel = 0  
+listFrame.Visible = false  
+listFrame.Parent = gui  
+Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0,8)  
+local frameStroke = Instance.new("UIStroke", listFrame)  
+frameStroke.Color = Color3.new(1,1,1)  
+frameStroke.Thickness = 1  
+frameStroke.Transparency = 0.5  
+  
+local title = Instance.new("TextLabel")  
+title.Size = UDim2.new(1,0,0,30)  
+title.BackgroundColor3 = Color3.fromRGB(30,30,30)  
+title.Text = "  Target"  
+title.TextColor3 = Color3.new(1,1,1)  
+title.TextSize = 12  
+title.Font = Enum.Font.GothamBold  
+title.TextXAlignment = Enum.TextXAlignment.Left  
+title.Parent = listFrame  
+Instance.new("UICorner", title).CornerRadius = UDim.new(0,8)  
+  
+local closeList = Instance.new("TextButton")  
+closeList.Size = UDim2.new(0,20,0,20)  
+closeList.Position = UDim2.new(1,-25,0,5)  
+closeList.BackgroundColor3 = Color3.fromRGB(50,50,50)  
+closeList.Text = "X"  
+closeList.TextColor3 = Color3.new(1,1,1)  
+closeList.TextSize = 12  
+closeList.Font = Enum.Font.GothamBold  
+closeList.Parent = listFrame  
+Instance.new("UICorner", closeList).CornerRadius = UDim.new(1,0)  
+  
+local scroll = Instance.new("ScrollingFrame")  
+scroll.Size = UDim2.new(1,0,1,-30)  
+scroll.Position = UDim2.new(0,0,0,30)  
+scroll.BackgroundTransparency = 1  
+scroll.ScrollBarThickness = 3  
+scroll.Parent = listFrame  
+local layout = Instance.new("UIListLayout", scroll)  
+layout.Padding = UDim.new(0,4)  
+  
+local function buildPlayerList()  
+    for _, child in pairs(scroll:GetChildren()) do  
+        if child:IsA("TextButton") then child:Destroy() end  
+    end  
+    local autoBtn = Instance.new("TextButton")  
+    autoBtn.Size = UDim2.new(1,-8,0,32)  
+    autoBtn.Position = UDim2.new(0,4,0,0)  
+    autoBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)  
+    autoBtn.Text = "Auto (cercano)"  
+    autoBtn.TextColor3 = Color3.new(1,1,1)  
+    autoBtn.TextSize = 12  
+    autoBtn.Font = Enum.Font.Gotham  
+    autoBtn.Parent = scroll  
+    autoBtn.MouseButton1Click:Connect(function()  
+        selectedTarget = nil  
+        listFrame.Visible = false  
+        listOpen = false  
+        targetLabel.Text = "Auto"  
+    end)  
+    Instance.new("UICorner", autoBtn).CornerRadius = UDim.new(0,4)  
+    for _, plr in pairs(Players:GetPlayers()) do  
+        if plr ~= lp then  
+            local btn = Instance.new("TextButton")  
+            btn.Size = UDim2.new(1,-8,0,32)  
+            btn.Position = UDim2.new(0,4,0,0)  
+            btn.BackgroundColor3 = Color3.fromRGB(35,35,35)  
+            btn.Text = plr.Name  
+            btn.TextColor3 = Color3.new(1,1,1)  
+            btn.TextSize = 12  
+            btn.Font = Enum.Font.Gotham  
+            btn.Parent = scroll  
+            btn.MouseButton1Click:Connect(function()  
+                selectedTarget = plr  
+                listFrame.Visible = false  
+                listOpen = false  
+                targetLabel.Text = plr.Name  
+            end)  
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,4)  
+        end  
+    end  
+    wait()  
+    scroll.CanvasSize = UDim2.new(0,0,0, layout.AbsoluteContentSize.Y + 8)  
+end  
+  
+-- Arrastre del botÃ³n  
+local dragging = false  
+local dragStart = nil  
+local startPos = nil  
+  
+mainBtn.InputBegan:Connect(function(input)  
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
+        dragging = true  
+        dragStart = input.Position  
+        startPos = mainBtn.Position  
+    end  
+end)  
+  
+UIS.InputChanged:Connect(function(input)  
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then  
+        local delta = input.Position - dragStart  
+        mainBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)  
+    end  
+end)  
+  
+UIS.InputEnded:Connect(function(input)  
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
+        dragging = false  
+    end  
+end)  
+  
+mainBtn.MouseButton1Click:Connect(function()  
+    if listOpen then  
+        listFrame.Visible = false  
+        listOpen = false  
+    end  
+    doAttack()  
+end)  
+  
+listBtn.MouseButton1Click:Connect(function()  
+    if listOpen then  
+        listFrame.Visible = false  
+        listOpen = false  
+    else  
+        buildPlayerList()  
+        listFrame.Visible = true  
+        listOpen = true  
+    end  
+end)  
+  
+closeList.MouseButton1Click:Connect(function()  
+    listFrame.Visible = false  
+    listOpen = false  
+end)  
+  
+RunService.RenderStepped:Connect(function()  
+    local remain = COOLDOWN - (tick() - lastAttack)  
+    if remain > 0 then  
+        mainBtn.BackgroundTransparency = 0.6  
+        mainBtn.Text = string.format("%.1f", remain)  
+        stroke.Transparency = 0.7  
+    else  
+        mainBtn.BackgroundTransparency = 0.2  
+        mainBtn.Text = "SACRED\nSORU"  
+        stroke.Transparency = 0.3  
+    end  
+    if not selectedTarget then  
+        local near = getNearest()  
+        targetLabel.Text = near and near.Name or "Nadie"  
+    else  
+        if not selectedTarget.Character then  
+            selectedTarget = nil  
+            targetLabel.Text = "Auto"  
+        else  
+            targetLabel.Text = selectedTarget.Name  
+        end  
+    end  
+end)  
+  
+print("SACRED SORU | Solo TP + X de Portal | Sencillo y funcional")  
