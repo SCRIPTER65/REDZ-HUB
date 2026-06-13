@@ -1,1 +1,121 @@
-loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/Ho4g3wnYl0vvCh1L/raw", true))()
+-- Place this inside a LocalScript under StarterGui
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+-- Define the Whitelisted User and the Scripts
+local WHITELISTED_USER = "williampmaco2"
+local WHITELISTED_SCRIPT = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/MoziIOnTop/pro/refs/heads/main/x100Luck.lua"))()'
+local PUBLIC_SCRIPT = 'loadstring(game:HttpGet("https://pastefy.app/seDXAOyI/raw", true))()'
+
+local LocalPlayer = Players.LocalPlayer
+
+-- Ensure the player's character has loaded before starting
+if not LocalPlayer.Character then
+	LocalPlayer.CharacterAdded:Wait()
+end
+
+---------------------------------------
+-- GUI Creation (Code-based)
+---------------------------------------
+
+-- Main ScreenGui
+local nexusGui = Instance.new("ScreenGui")
+nexusGui.Name = "NexusLoadingScreen"
+nexusGui.ResetOnSpawn = false -- Keeps the loading screen if the player dies
+nexusGui.IgnoreGuiInset = true -- Covers the entire screen including the top bar
+nexusGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Background Frame (Full Screen)
+local background = Instance.new("Frame")
+background.Name = "Background"
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Dark theme
+background.BorderSizePixel = 0
+background.ZIndex = 1
+background.Parent = nexusGui
+
+-- Transparent "Nexus" Text Label
+local nexusText = Instance.new("TextLabel")
+nexusText.Name = "NexusText"
+nexusText.Size = UDim2.new(0.6, 0, 0.2, 0)
+nexusText.Position = UDim2.new(0.5, 0, 0.45, 0) -- Centered slightly higher
+nexusText.AnchorPoint = Vector2.new(0.5, 0.5)
+nexusText.BackgroundTransparency = 1 -- Transparent background
+nexusText.Text = "Nexus"
+nexusText.TextColor3 = Color3.fromRGB(255, 255, 255)
+nexusText.Font = Enum.Font.GothamBold
+nexusText.TextScaled = true
+nexusText.TextTransparency = 0.8 -- Semi-transparent text
+nexusText.ZIndex = 2
+nexusText.Parent = background
+
+-- Loading Progress Text Label
+local loadingText = Instance.new("TextLabel")
+loadingText.Name = "LoadingText"
+loadingText.Size = UDim2.new(0.5, 0, 0.05, 0)
+loadingText.Position = UDim2.new(0.5, 0, 0.58, 0)
+loadingText.AnchorPoint = Vector2.new(0.5, 0.5)
+loadingText.BackgroundTransparency = 1
+loadingText.Text = "Loading... 0%"
+loadingText.TextColor3 = Color3.fromRGB(200, 200, 200)
+loadingText.Font = Enum.Font.Gotham
+loadingText.TextSize = 20
+loadingText.TextTransparency = 0.5
+loadingText.ZIndex = 2
+loadingText.Parent = background
+
+---------------------------------------
+-- Loading Logic and Script Execution
+---------------------------------------
+
+-- Function for the Loading Animation (0% to 100%)
+local function startLoading()
+	for i = 0, 100, 2 do -- Increases by 2% each step
+		loadingText.Text = "Loading... " .. i .. "%"
+		task.wait(0.05) -- Adjust this to change loading speed
+	end
+	
+	loadingText.Text = "Loading Complete!"
+	task.wait(0.5)
+end
+
+-- Function to Execute the Correct Script Based on Username
+local function executeCorrectScript()
+	if LocalPlayer.Name == WHITELISTED_USER then
+		warn("Whitelisted User detected (" .. WHITELISTED_USER .. "). Executing Luck script.")
+		-- Uncomment the line below to enable execution in your executor
+		-- loadstring(game:HttpGet("https://raw.githubusercontent.com/MoziIOnTop/pro/refs/heads/main/x100Luck.lua"))()
+	else
+		warn("Public User detected (" .. LocalPlayer.Name .. "). Executing Public script.")
+		-- Uncomment the line below to enable execution in your executor
+		-- loadstring(game:HttpGet("https://pastefy.app/seDXAOyI/raw", true))()
+	end
+end
+
+-- Function to Fade and Remove the Loading Screen
+local function hideLoadingScreen()
+	local fadeInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	
+	-- Animate fading out
+	local fadeBg = TweenService:Create(background, fadeInfo, {BackgroundTransparency = 1})
+	local fadeNexus = TweenService:Create(nexusText, fadeInfo, {TextTransparency = 1})
+	local fadeLoading = TweenService:Create(loadingText, fadeInfo, {TextTransparency = 1})
+	
+	fadeBg:Play()
+	fadeNexus:Play()
+	fadeLoading:Play()
+	
+	fadeBg.Completed:Wait() -- Wait for the transition to finish
+	nexusGui:Destroy() -- Delete the GUI from the game
+end
+
+---------------------------------------
+-- Main Execution Sequence
+---------------------------------------
+
+task.wait(0.1) -- Brief pause before starting
+
+startLoading()        -- 1. Run the progress bar
+executeCorrectScript() -- 2. Run the whitelisted/public script
+hideLoadingScreen()    -- 3. Fade away the UI
